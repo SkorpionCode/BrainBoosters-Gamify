@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Tahoma, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Graph paper background on the left and right, now it covers entire height */
+        body::before, body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 24%;
+            background-image: linear-gradient(#7EC8E3 0.5px, transparent 0.5px), linear-gradient(to right, #7EC8E3 0.5px, transparent 0.5px);
+            background-size: 100% 30px, 30px 100%;
+            background-position: top left;
+            background-repeat: repeat;
+        }
+
+        body::before {
+            left: 0;
+        }
+
+        body::after {
+            right: 0;
+        }
+
+        .quiz-container {
+            width: 80%;
+            max-width: 800px;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid black;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1; /* Make sure quiz container appears above the background */
+        }
+
+        .quiz-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .quiz-question {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #333;
+            background-color: #f0f8ff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #7EC8E3;
+        }
+
+        .quiz-options {
+            list-style-type: none;
+            margin-bottom: 30px;
+        }
+
+        .quiz-options li {
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .quiz-options li:hover {
+            background-color: #e6f4fc;
+            transform: translateY(-5px);
+        }
+
+        .quiz-options li.selected {
+            background-color: #7EC8E3;
+            color: white;
+        }
+
+        .quiz-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-button,
+        .next-button {
+            position: fixed;
+            bottom: 30px;
+            background-color: #FAF3E0;
+            color: black;
+            border: none;
+            padding: 20px 36px;
+            font-size: 1.2rem;
+            border-radius: 5%;
+            cursor: pointer;
+            font-weight: bold;
+            border: 1px solid black;
+        }
+
+        .back-button {
+            left: 30px;
+        }
+
+        .next-button {
+            right: 30px;
+        }
+
+        .back-button:hover,
+        .next-button:hover {
+            background-color: #56a1c1;
+            transform: translateY(-3px);
+        }
+
+        /* Score message styling */
+        .score-message {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: red;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 9999;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="quiz-title">Algebra Quiz</h1>
+
+        <!-- Question 1 -->
+        <div class="quiz-question" data-question="1">
+            What is the value of x in the equation 2x + 4 = 10?
+        </div>
+        <ul class="quiz-options">
+            <li data-question="1">2</li>
+            <li data-question="1">3</li>
+            <li data-question="1">4</li>
+            <li data-question="1">5</li>
+        </ul>
+
+        <!-- Question 2 -->
+        <div class="quiz-question" data-question="2">
+            Simplify the expression (x^2 - 4x + 3) + (x^2 + 2x - 1).
+        </div>
+        <ul class="quiz-options">
+            <li data-question="2">2x^2 - 2x + 2</li>
+            <li data-question="2">2x^2 - 2x + 4</li>
+            <li data-question="2">2x^2 + 2</li>
+            <li data-question="2">2x^2</li>
+        </ul>
+
+        <!-- Question 3 -->
+        <div class="quiz-question" data-question="3">
+            What is the slope of the line that passes through the points (2, 3) and (5, 7)?
+        </div>
+        <ul class="quiz-options">
+            <li data-question="3">1/3</li>
+            <li data-question="3">2/3</li>
+            <li data-question="3">3/5</li>
+            <li data-question="3">4/3</li>
+        </ul>
+
+        <div class="quiz-actions">
+            <a href="{% url 'dashboard' %}">
+                <button class="back-button">Back to Dashboard</button>
+            </a>
+            <button class="next-button">Next</button>
+        </div>
+    </div>
+
+    <div class="score-message" id="score-message"></div>
+
+    <script>
+        // Correct answers for each question
+        const correctAnswers = {
+            1: '3',   // Correct answer for question 1
+            2: '2x^2 - 2x + 4', // Correct answer for question 2
+            3: '4/3',   // Correct answer for question 3
+        };
+
+        let score = 0;  // Track the score
+
+        // Add interactivity for selecting options per question
+        const quizOptions = document.querySelectorAll('.quiz-options li');
+        quizOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const questionNumber = option.getAttribute('data-question');
+                const optionsForThisQuestion = document.querySelectorAll(`.quiz-options li[data-question="${questionNumber}"]`);
+
+                // Deselect other options for this question and select the clicked one
+                optionsForThisQuestion.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+
+        // Handle "Next" button functionality
+        const nextButton = document.querySelector('.next-button');
+        nextButton.addEventListener('click', () => {
+            let currentScore = 0; // Reset score for this quiz session
+
+            // Check selected answers for each question
+            document.querySelectorAll('.quiz-options').forEach(optionsList => {
+                const questionNumber = optionsList.querySelector('li').getAttribute('data-question');
+                const selectedOption = optionsList.querySelector('.selected');
+
+                if (selectedOption) {
+                    const answerText = selectedOption.textContent.trim();
+                    const correctAnswer = correctAnswers[questionNumber];
+
+                    // Check if selected option is correct or incorrect
+                    if (answerText === correctAnswer) {
+                        selectedOption.style.backgroundColor = '#28a745'; // Green for correct
+                        currentScore++;  // Increase score if correct
+                    } else {
+                        selectedOption.style.backgroundColor = '#dc3545'; // Red for incorrect
+
+                        // Highlight the correct answer in green
+                        optionsList.querySelectorAll('li').forEach(option => {
+                            if (option.textContent.trim() === correctAnswer) {
+                                option.style.backgroundColor = '#28a745'; // Green for correct
+                            }
+                        });
+                    }
+
+                    // Disable further selection for the question
+                    optionsList.querySelectorAll('li').forEach(option => option.style.pointerEvents = 'none');
+                }
+            });
+
+            // Update and show score
+            score += currentScore;
+            const scoreMessage = document.getElementById('score-message');
+            scoreMessage.textContent = `Your Score: ${score} / 3`;
+            scoreMessage.style.display = 'block';
+
+            // Hide the score message after 3 seconds and redirect to dashboard
+            setTimeout(() => {
+                scoreMessage.style.display = 'none';
+                // Redirect to the dashboard after 3 seconds
+                window.location.href = "{% url 'dashboard' %}"; // Redirect to dashboard
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
